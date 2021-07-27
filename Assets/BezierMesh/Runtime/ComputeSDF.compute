@@ -1,0 +1,19 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel Clear
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+Texture2D<float4> Source;
+RWTexture2D<float4> Result;
+uint width;
+uint height;
+
+[numthreads(8,8,1)]
+void Clear (uint3 id : SV_DispatchThreadID)
+{
+  if (id.x < width && id.y < height)
+  {
+    float4 c = float4(0, 0, 0, Source[id.xy].a);
+    Result[id.xy] = c;
+  }
+}
