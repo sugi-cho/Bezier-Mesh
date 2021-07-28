@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 using Unity.VectorGraphics;
 
@@ -13,6 +14,8 @@ public class SpriteToSDF : MonoBehaviour
     [SerializeField] Renderer sdf;
     [SerializeField] int pixelPerUnit = 64;
     [SerializeField] ComputeShader sdfCompute;
+    [SerializeField] TextureEvent onTextureCreated;
+    [SerializeField] TextureEvent onSDFTextureCreated;
 
     public void GenerateSDF(Sprite source)
     {
@@ -21,6 +24,7 @@ public class SpriteToSDF : MonoBehaviour
             DestroyImmediate(texture);
         texture = VectorUtils.RenderSpriteToTexture2D(source, Mathf.RoundToInt(rect.width * pixelPerUnit), Mathf.RoundToInt(rect.height * pixelPerUnit), drawMat, 4);
         texture.wrapMode = TextureWrapMode.Clamp;
+        onTextureCreated.Invoke(texture);
         var mpb = new MaterialPropertyBlock();
         if (quad != null)
         {
@@ -37,6 +41,7 @@ public class SpriteToSDF : MonoBehaviour
         sdfTexture = new RenderTexture(texture.width + pixelPerUnit * 2, texture.height + pixelPerUnit * 2, 0, RenderTextureFormat.ARGB32, readWrite);
         sdfTexture.enableRandomWrite = true;
         sdfTexture.Create();
+        onSDFTextureCreated.Invoke(sdfTexture);
         Graphics.CopyTexture(texture, 0, 0, 0, 0, texture.width, texture.height, sdfTexture, 0, 0, pixelPerUnit, pixelPerUnit);
 
         var tmp = RenderTexture.GetTemporary(sdfTexture.descriptor);
@@ -77,4 +82,7 @@ public class SpriteToSDF : MonoBehaviour
             sdf.transform.localScale = new Vector3(rect.width + 2f, rect.height + 2f, 1f);
         }
     }
+
+    [System.Serializable]
+    public class TextureEvent: UnityEvent<Texture> { }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Events;
 
 using Unity.VectorGraphics;
 
@@ -15,6 +16,9 @@ public class BezierMesh : MonoBehaviour
     [SerializeField] bool pathEdited;
     [SerializeField] bool useMesh;
     Mesh m_mesh;
+
+    [SerializeField] MeshEvent onMeshCreated;
+    [SerializeField] SpriteEvent onSpriteCreated;
 
     private void OnValidate()
     {
@@ -32,6 +36,7 @@ public class BezierMesh : MonoBehaviour
             m_mesh = new Mesh();
             m_mesh.MarkDynamic();
             GetComponent<MeshFilter>().sharedMesh = m_mesh;
+            onMeshCreated.Invoke(m_mesh);
             PathEdited = true;
         }
         if (pathEdited)
@@ -126,6 +131,7 @@ public class BezierMesh : MonoBehaviour
         }
 
         PathEdited = false;
+        onSpriteCreated.Invoke(sprite);
 
         var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
         var spriteToSDF = GetComponentInChildren<SpriteToSDF>();
@@ -177,4 +183,9 @@ public class BezierMesh : MonoBehaviour
         public Vector2 P1;
         public Vector2 P2;
     }
+
+    [System.Serializable]
+    public class MeshEvent : UnityEvent<Mesh> { }
+    [System.Serializable]
+    public class SpriteEvent : UnityEvent<Sprite> { }
 }
