@@ -1,19 +1,90 @@
 // Each #kernel tells which function to compile; you can have many kernels
-#pragma kernel Clear
+#pragma kernel Init
+#pragma kernel Spread
 
+//https://techblog.kayac.com/unity_advent_calendar_2018_23
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 Texture2D<float4> Source;
 RWTexture2D<float4> Result;
 uint width;
 uint height;
+half pixelDistance;
 
-[numthreads(8,8,1)]
-void Clear (uint3 id : SV_DispatchThreadID)
+#define TWO_SQRT 1.41421356237
+
+half2 GetGradient(uint2 xy)
 {
+  half diag1 = -Source[xy + uint2(-1, 1)].a + Source[xy + uint2(1, -1)].a;
+  half diag2 = -Source[xy + uint2(-1, -1)].a + Source[xy + uint2(1, 1)].a;
+  half right = Source[xy + uint2(1, 0)].a;
+  half left = Source[xy + uint2(-1, 0)].a;
+  half up = Source[xy + uint2(0, 1)].a;
+  half down = Source[xy + uint2(0, -1)].a;
+  half gx = diag1 + diag2 + (right - left) * TWO_SQRT;
+  half gy = diag1 - diag2 + (down - up) * TWO_SQRT;
+  return half2(gx, gy);
+}
+inline float ApproximateDistance(float2 grad, float a)
+{
+  grad = normalize(grad);
+  grad = abs(grad);
+
+  float gx = grad.x;
+  float gy = grad.y;
+
+  grad.xy = float2(max(gx, gy), min(gx, gy));
+
+  gx = grad.x;
+  gy = grad.y;
+
+  float a1 = 0.5 * gy / gx;
+  if (a < a1)
+  {
+    return 0.5 * (gx + gy) - sqrt(2 * gx * gy * a);
+  }
+  if (a < (1 - a1))
+  {
+    return (0.5 - a) * gx;
+  }
+  return -0.5 * (gx + gy) + sqrt(2 * gx * gy * (1 - a));
+}
+
+[numthreads(8, 8, 1)]
+void Init(uint3 id : SV_DispatchThreadID)
+{
+  half dist = 1;
   if (id.x < width && id.y < height)
   {
-    float4 c = float4(0, 0, 0, Source[id.xy].a);
-    Result[id.xy] = c;
+    half alpha = Source[id.xy].a;
+    half2 grad = GetGradient(id.xy);
+    bool isEdge = step(abs(alpha - 0.5), 0.499) + step(2.5, length(grad)) > 0;
+    dist = isEdge ? 0.5 * ApproximateDistance(grad, alpha) * pixelDistance : 1;
+    Result[id.xy] = half4(dist * half2(alpha, 1 - alpha), dist, alpha);
+  }
+}
+
+[numthreads(8, 8, 1)]
+void Spread(uint3 id : SV_DispatchThreadID)
+{
+  if (all(0 < id.xy) && id.x < width - 1 && id.y < height - 1)
+  {
+    half alpha = Source[id.xy].a;
+    
+    half d00 = Source[id.xy + uint2(-1, -1)].z + pixelDistance * TWO_SQRT;
+    half d01 = Source[id.xy + uint2(-1, +0)].z + pixelDistance;
+    half d02 = Source[id.xy + uint2(-1, +1)].z + pixelDistance * TWO_SQRT;
+    
+    half d10 = Source[id.xy + uint2(+0, -1)].z + pixelDistance * TWO_SQRT;
+    half d11 = Source[id.xy + uint2(+0, +0)].z;
+    half d12 = Source[id.xy + uint2(+0, +1)].z + pixelDistance * TWO_SQRT;
+    
+    half d20 = Source[id.xy + uint2(+1, -1)].z + pixelDistance * TWO_SQRT;
+    half d21 = Source[id.xy + uint2(+1, +0)].z + pixelDistance;
+    half d22 = Source[id.xy + uint2(+1, +1)].z + pixelDistance * TWO_SQRT;
+    
+    half dist = min(min(min(d00, d01), d02), min(min(min(d10, d11), d12), min(min(d20, d21), d22)));
+    
+    Result[id.xy] = half4(dist * half2(alpha, 1 - alpha), dist, alpha);
   }
 }
