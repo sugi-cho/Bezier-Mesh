@@ -8,6 +8,7 @@ using Unity.VectorGraphics;
 public class SpriteToSDF : MonoBehaviour
 {
     [SerializeField] Texture2D texture;
+    [SerializeField] Sprite texturedSprite;
     [SerializeField] RenderTexture sdfTexture;
     [SerializeField] Material drawMat;
     [SerializeField] Renderer quad;
@@ -17,6 +18,9 @@ public class SpriteToSDF : MonoBehaviour
     [SerializeField] TextureEvent onTextureCreated;
     [SerializeField] TextureEvent onSDFTextureCreated;
 
+    List<Vector2> physicsPoints = new List<Vector2>();
+    List<Vector2> simplifiedPoints = new List<Vector2>();
+
     public void GenerateSDF(Sprite source)
     {
         var rect = source.rect;
@@ -25,13 +29,25 @@ public class SpriteToSDF : MonoBehaviour
         texture = VectorUtils.RenderSpriteToTexture2D(source, Mathf.RoundToInt(rect.width * pixelPerUnit), Mathf.RoundToInt(rect.height * pixelPerUnit), drawMat, 4);
         texture.wrapMode = TextureWrapMode.Clamp;
         onTextureCreated.Invoke(texture);
+        var pivot = source.pivot / source.rect.size;
+        texturedSprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), pivot, pixelPerUnit, 0, SpriteMeshType.Tight);
+
+        var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
+        spriteRenderer.sprite = texturedSprite;
+        spriteRenderer.transform.localPosition = source.rect.center;
+        var polygon2d = GetComponentInChildren<PolygonCollider2D>();
+        if (polygon2d != null)
+        {
+            DestroyImmediate(polygon2d);
+            spriteRenderer.gameObject.AddComponent<PolygonCollider2D>();
+        }
+
         var mpb = new MaterialPropertyBlock();
         if (quad != null)
         {
             quad.GetPropertyBlock(mpb);
             mpb.SetTexture("_MainTex", texture);
             quad.SetPropertyBlock(mpb);
-            quad.transform.localPosition = rect.center;
             quad.transform.localScale = new Vector3(rect.width, rect.height, 1f);
         }
         if (sdfTexture != null)
@@ -78,7 +94,6 @@ public class SpriteToSDF : MonoBehaviour
             sdf.GetPropertyBlock(mpb);
             mpb.SetTexture("_MainTex", sdfTexture);
             sdf.SetPropertyBlock(mpb);
-            sdf.transform.localPosition = rect.center;
             sdf.transform.localScale = new Vector3(rect.width + 2f, rect.height + 2f, 1f);
         }
     }

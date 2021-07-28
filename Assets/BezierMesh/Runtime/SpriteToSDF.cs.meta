@@ -3,7 +3,13 @@ guid: b33a0c2654d4fa340abd3903a4e0509a
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - texture: {instanceID: 0}
+  - sdfTexture: {instanceID: 0}
+  - drawMat: {fileID: 2100000, guid: 73ddb2958e9cd451c82f37c26efa5eb0, type: 2}
+  - quad: {instanceID: 0}
+  - sdf: {instanceID: 0}
+  - sdfCompute: {fileID: 7200000, guid: 071f99e287923f4428c3ec6b6aedba08, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

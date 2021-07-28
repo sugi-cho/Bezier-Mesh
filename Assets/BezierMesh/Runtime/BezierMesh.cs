@@ -118,6 +118,7 @@ public class BezierMesh : MonoBehaviour
         var geom = VectorUtils.TessellateScene(scene, options);
 
         var sprite = VectorUtils.BuildSprite(geom, 1f, VectorUtils.Alignment.Center, Vector2.zero, 128);
+        onSpriteCreated.Invoke(sprite);
         var center = sprite.rect.center;
 
         if (useMesh && m_mesh != null)
@@ -131,21 +132,6 @@ public class BezierMesh : MonoBehaviour
         }
 
         PathEdited = false;
-        onSpriteCreated.Invoke(sprite);
-
-        var spriteRenderer = GetComponentInChildren<SpriteRenderer>();
-        var spriteToSDF = GetComponentInChildren<SpriteToSDF>();
-        if (spriteToSDF != null)
-            spriteToSDF.GenerateSDF(sprite);
-        if (spriteRenderer != null)
-        {
-            if (spriteRenderer.sprite != null)
-                DestroyImmediate(spriteRenderer.sprite);
-            spriteRenderer.sprite = sprite;
-            spriteRenderer.transform.localPosition = center;
-        }
-        else
-            DestroyImmediate(sprite);
     }
 
     static VectorUtils.TessellationOptions MakeOptions(float stepDistance = float.MaxValue)
