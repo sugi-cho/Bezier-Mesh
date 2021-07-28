@@ -11,20 +11,14 @@ public class BezierMesh : MonoBehaviour
 {
     [SerializeField, ContextMenuItem("load from svg", "LoadSvgFile")] string svgFilePath;
     public List<PathParam> pathParams;
-    public bool PathEdited { set => m_pathEdited = value; }
-    [SerializeField] bool m_pathEdited;
+    public bool PathEdited { set => pathEdited = value; }
+    [SerializeField] bool pathEdited;
+    [SerializeField] bool useMesh;
     Mesh m_mesh;
 
     private void OnValidate()
     {
-        m_pathEdited = true;
-    }
-    private void Start()
-    {
-        m_mesh = new Mesh();
-        m_mesh.MarkDynamic();
-        GetComponent<MeshFilter>().sharedMesh = m_mesh;
-        PathEdited = true;
+        pathEdited = true;
     }
     private void OnDestroy()
     {
@@ -33,7 +27,14 @@ public class BezierMesh : MonoBehaviour
     }
     private void Update()
     {
-        if (m_pathEdited)
+        if (useMesh && m_mesh == null)
+        {
+            m_mesh = new Mesh();
+            m_mesh.MarkDynamic();
+            GetComponent<MeshFilter>().sharedMesh = m_mesh;
+            PathEdited = true;
+        }
+        if (pathEdited)
             GenerateMesh();
     }
 
@@ -114,12 +115,15 @@ public class BezierMesh : MonoBehaviour
         var sprite = VectorUtils.BuildSprite(geom, 1f, VectorUtils.Alignment.Center, Vector2.zero, 128);
         var center = sprite.rect.center;
 
-        m_mesh.Clear();
-        m_mesh.SetVertices(sprite.vertices.Select(v => (Vector3)(v + center)).ToList());
-        m_mesh.SetIndices(sprite.triangles.ToList(), MeshTopology.Triangles, 0);
-        m_mesh.RecalculateNormals();
-        m_mesh.RecalculateTangents();
-        m_mesh.RecalculateBounds();
+        if (useMesh && m_mesh != null)
+        {
+            m_mesh.Clear();
+            m_mesh.SetVertices(sprite.vertices.Select(v => (Vector3)(v + center)).ToList());
+            m_mesh.SetIndices(sprite.triangles.ToList(), MeshTopology.Triangles, 0);
+            m_mesh.RecalculateNormals();
+            m_mesh.RecalculateTangents();
+            m_mesh.RecalculateBounds();
+        }
 
         PathEdited = false;
 
@@ -129,7 +133,7 @@ public class BezierMesh : MonoBehaviour
             spriteToSDF.GenerateSDF(sprite);
         if (spriteRenderer != null)
         {
-            if(spriteRenderer.sprite!=null)
+            if (spriteRenderer.sprite != null)
                 DestroyImmediate(spriteRenderer.sprite);
             spriteRenderer.sprite = sprite;
             spriteRenderer.transform.localPosition = center;

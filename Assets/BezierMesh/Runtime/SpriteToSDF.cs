@@ -33,7 +33,8 @@ public class SpriteToSDF : MonoBehaviour
         if (sdfTexture != null)
             DestroyImmediate(sdfTexture);
 
-        sdfTexture = new RenderTexture(texture.width + pixelPerUnit * 2, texture.height + pixelPerUnit * 2, 0, RenderTextureFormat.ARGB32);
+        var readWrite = QualitySettings.activeColorSpace == ColorSpace.Linear ? RenderTextureReadWrite.Linear : RenderTextureReadWrite.sRGB;
+        sdfTexture = new RenderTexture(texture.width + pixelPerUnit * 2, texture.height + pixelPerUnit * 2, 0, RenderTextureFormat.ARGB32, readWrite);
         sdfTexture.enableRandomWrite = true;
         sdfTexture.Create();
         Graphics.CopyTexture(texture, 0, 0, 0, 0, texture.width, texture.height, sdfTexture, 0, 0, pixelPerUnit, pixelPerUnit);
@@ -64,7 +65,7 @@ public class SpriteToSDF : MonoBehaviour
 
         if (rts[0] != sdfTexture)
             Graphics.ConvertTexture(rts[0], sdfTexture);
-        
+
         RenderTexture.ReleaseTemporary(tmp);
 
         if (sdf != null)
