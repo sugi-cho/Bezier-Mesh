@@ -1,0 +1,17 @@
+{
+    "name": "BezierMeshEditor",
+    "rootNamespace": "",
+    "references": [
+        "GUID:68550284b645f4b9894995579f34290a",
+        "GUID:f79cc91f3baf72e47897decbda2c2db0"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
